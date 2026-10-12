@@ -1,0 +1,152 @@
+-- =====================================================
+-- สายเลือดอาชีวะ ไทย - Premium Hub (Delta Executor)
+-- =====================================================
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "🔪 สายเลือดอาชีวะ ไทย Hub",
+   LoadingTitle = "กำลังโหลดระบบอาชีวะ...",
+   LoadingSubtitle = "by Delta Executor",
+   ConfigurationSaving = { Enabled = false }
+})
+
+local MainTab = Window:CreateTab("ฟังก์ชันหลัก", 4483362458)
+local VisualTab = Window:CreateTab("มองทะลุ/เส้น", 4483362458)
+
+--------------------------------------------------------
+-- 1. สคริปต์ออโต้ฟาร์ม (Auto Farm)
+--------------------------------------------------------
+_G.AutoFarm = false
+
+MainTab:CreateToggle({
+   Name = "เปิดออโต้ฟาร์ม (Auto Farm)",
+   CurrentValue = false,
+   Flag = "AutoFarmToggle",
+   Callback = function(Value)
+       _G.AutoFarm = Value
+       task.spawn(function()
+           while _G.AutoFarm do
+               task.wait(0.1)
+               local player = game.Players.LocalPlayer
+               local char = player.Character
+               if char and char:FindFirstChild("HumanoidRootPart") then
+                   -- วาร์ปไปหาเป้าหมาย/NPC ในระยะ
+                   for _, target in pairs(workspace:GetChildren()) do
+                       if target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 and target ~= char then
+                           if target:FindFirstChild("HumanoidRootPart") then
+                               char.HumanoidRootPart.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+                               break
+                           end
+                       end
+                   end
+               end
+           end
+       end)
+   end,
+})
+
+--------------------------------------------------------
+-- 2. สคริปต์ล็อกหัว (Aimbot Head)
+--------------------------------------------------------
+_G.AimbotHead = false
+local Camera = workspace.CurrentCamera
+local LocalPlayer = game.Players.LocalPlayer
+
+MainTab:CreateToggle({
+   Name = "เปิดล็อกหัว (Aimbot Head)",
+   CurrentValue = false,
+   Flag = "AimbotToggle",
+   Callback = function(Value)
+       _G.AimbotHead = Value
+   end,
+})
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    if _G.AimbotHead then
+        local closestTarget = nil
+        local shortestDistance = math.huge
+        
+        for _, plr in pairs(game.Players:GetPlayers()) do
+            if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("Head") and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0 then
+                local pos, onScreen = Camera:WorldToViewportPoint(plr.Character.Head.Position)
+                if onScreen then
+                    local mousePos = Vector2.new(LocalPlayer:GetMouse().X, LocalPlayer:GetMouse().Y)
+                    local dist = (Vector2.new(pos.X, pos.Y) - mousePos).Magnitude
+                    if dist < shortestDistance and dist < 300 then
+                        shortestDistance = dist
+                        closestTarget = plr.Character.Head
+                    end
+                end
+            end
+        end
+        
+        if closestTarget then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, closestTarget.Position)
+        end
+    end
+end)
+
+--------------------------------------------------------
+-- 3. สคริปต์ขยายกล่องดาเมจ / ระยะโจมตี (Hitbox Expander)
+--------------------------------------------------------
+_G.HitboxSize = 20
+_G.HitboxEnabled = false
+
+MainTab:CreateToggle({
+   Name = "ขยายขนาด Hitbox/ระยะโจมตี",
+   CurrentValue = false,
+   Flag = "HitboxToggle",
+   Callback = function(Value)
+       _G.HitboxEnabled = Value
+       task.spawn(function()
+           while _G.HitboxEnabled do
+               task.wait(0.5)
+               for _, plr in pairs(game.Players:GetPlayers()) do
+                   if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                       local hrp = plr.Character.HumanoidRootPart
+                       hrp.Size = Vector3.new(_G.HitboxSize, _G.HitboxSize, _G.HitboxSize)
+                       hrp.Transparency = 0.7
+                       hrp.BrickColor = BrickColor.new("Really red")
+                       hrp.Material = Enum.Material.Neon
+                       hrp.CanCollide = false
+                   end
+               end
+           end
+       end)
+   end,
+})
+
+--------------------------------------------------------
+-- 4. สคริปต์วาดเส้นบอกตำแหน่งศัตรู (ESP Line)
+--------------------------------------------------------
+_G.ESPLine = false
+
+VisualTab:CreateToggle({
+   Name = "เปิดเส้นวาดหาศัตรู (ESP Line)",
+   CurrentValue = false,
+   Flag = "ESPLineToggle",
+   Callback = function(Value)
+       _G.ESPLine = Value
+       if not Value then
+           -- ลบเส้นทั้งหมดเมื่อปิด
+           for _, v in pairs(workspace:GetChildren()) do
+               if v.Name == "ESP_Line" then v:Destroy() end
+           end
+       end
+   end,
+})
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    if _G.ESPLine then
+        for _, plr in pairs(game.Players:GetPlayers()) do
+            if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                local hrp = plr.Character.HumanoidRootPart
+                local line = hrp:FindFirstChild("ESP_Line")
+                if not line then
+                    local attachment = Instance.new("Attachment", hrp)
+                    local beam = Instance.new("Beam", hrp)
+                    beam.Name = "ESP_Line"
+                    beam.Attachment0 = attachment
+                    beam.Width0 = 0.1
+                    beam.Width1
